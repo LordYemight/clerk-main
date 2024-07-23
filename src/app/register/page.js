@@ -3,13 +3,17 @@ import BashedEye from "@/components/icons/BashedEye";
 import Eye from "@/components/icons/Eye";
 import Image from "next/image";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useSignUp } from "@clerk/nextjs";
 import Verify from "./components/verify";
 import LoadingFormII from "@/components/loader/loadingFormII";
 import GoogleOAuth from "@/components/api/googleOAuth";
+import { useRouter, useSearchParams } from "next/navigation";
 
 const Register = () => {
+  const urlParams = useSearchParams();
+  const home = urlParams?.get("created_session_id")
+  const router = useRouter();
   const { isLoaded, signUp, setActive } = useSignUp();
   const [formData, setFormData] = useState({
     email: "",
@@ -20,10 +24,16 @@ const Register = () => {
     agreedToTerms: false,
   });
   const [pendingVerification, setPendingVerification] = useState(false);
-
   const [passwordError, setPasswordError] = useState(null);
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (home) {
+      router.push('/');
+    }
+  }, [home]);
 
   const Visible = () => {
     setVisible(!visible);
@@ -66,18 +76,39 @@ const Register = () => {
       }
     }
   };
+
+
   const handleGoogleSignUp = async () => {
+    if (!isLoaded) {
+      console.error('SignUp is not loaded yet.');
+      setError('SignUp is not loaded yet.');
+      return;
+    }
+  
     try {
-      const redirectUrl = await signUp.create({
+      const response = await signUp.create({
         strategy: 'oauth_google',
-        redirect_url: window.location.href
+        redirect_url: window.location.href,
+        flow: 'signUp',
       });
-      console.log(redirectUrl);
+  
+      console.log('Google Sign Up Response:', response);
+  
+      const { verifications } = response;
+      if (verifications && verifications.externalAccount && verifications.externalAccount.externalVerificationRedirectURL) {
+        const href = verifications.externalAccount.externalVerificationRedirectURL.href;
+        window.location.href = href;
+        setActive('/');
+      } else {
+        console.error('Google Sign Up verification URL not found:', response);
+        setError("Google Sign Up verification URL not found");
+      }
     } catch (error) {
       console.error('Error creating redirect URL for Google Sign Up:', error);
+      setError("Error creating redirect URL for Google Sign Up");
     }
   };
-
+  
   return (
     <div className="max-w-[1440px]">
       {!pendingVerification ? (
@@ -200,6 +231,11 @@ const Register = () => {
                       />
                       Sign Up with Google
                     </div>
+                    {error && (
+                      <span className="mt-[4px] font[400] text-[13px] text-red-500">
+                        {error}
+                      </span>
+                    )}
                   </div>
                   <p className="text-c enter font-[400] text-[14px]">
                     Already have an account?

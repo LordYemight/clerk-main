@@ -3,51 +3,71 @@
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
+import { useSignIn, useSignUp } from "@clerk/nextjs";
+import LoadingFormII from "@/components/loader/loadingFormII";
+import { useRouter } from "next/navigation";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
+  const [code, setCode] = useState("");
+  const [password, setPassword] = useState("");
   const [sentEmail, setSentMail] = useState(false);
-  const [emailError, setEmailError] = useState(false);
+  const [emailError, setEmailError] = useState("");
+  const { signIn, setActive } = useSignIn();
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    setEmailError("");
+    setLoading(true);
     try {
-      // const response = await api.post(
-      //   "/auth/forgotpassword",
-      //   { email }
-      // );
-
-      if (response.data.statuscode === 200 || 201) {
-        setSentMail(true);
+      const result = await signIn?.create({
+        strategy: "reset_password_email_code",
+        identifier: email,
+      });
+      if (result.status === "complete") {
+        setEmailError("");
       } else {
-        setEmailError(response.data.message);
+        setLoading(false);
       }
-    } catch (error) {
-      setEmailError(error.response?.data?.message);
+    } catch (err) {
+      console.error("error", err.errors[0].longMessage);
+      setEmailError(err.errors[0].longMessage);
+    } finally {
+      setSentMail(true);
+      setLoading(false);
     }
   };
 
-  const handleSubmitT = async (e) => {
+  const handleReset = async (e) => {
     e.preventDefault();
-
+    setEmailError("");
+    setLoading(true);
     try {
-      // const response = await api.post(
-      //   "/auth/forgotpassword",
-      //   { email }
-      // );
+      const result = await signIn?.attemptFirstFactor({
+        strategy: "reset_password_email_code",
+        code: code,
+        password: password,
+      });
 
-      if (response.data.statuscode === 200 || 201) {
-        setSentMail(true);
-        // toast.success("reset password link sent to your mail.");
+      if (result.status === "complete") {
+        await setActive({ session: result.createdSessionId });
+        router.push("/");
+        setEmailError("");
       } else {
-        // toast.error(response.data.message);
+        setLoading(false);
+        setEmailError("Attempt to change password failed");
       }
-    } catch (error) {
-      // setEmailError(error.response?.data?.message);
+    } catch (err) {
+      console.error("error", err.errors[0].longMessage);
+      setEmailError(err.errors[0].longMessage);
+      setLoading(false);
+    } finally {
+      setLoading(false);
+      router.push("/");
     }
   };
-
 
   return (
     <div className="">
@@ -63,20 +83,19 @@ const ForgotPassword = () => {
                   <p className="mt-1 text-[16px] text-start font-[400] text-GrayHomz">
                     Enter your email and we’ll send you a reset link.
                   </p>
-                  <form className="mt-6">
+                  <form className="mt-6" onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-2 items-start">
                       <label className="text-center text-[14px] font-[500] text-BlackHomz">
                         Email*
                       </label>
                       <input
-                        className={`border w-full sm:w-[360px] rounded-[4px] h-[47px] px-2 placeholder:text-[14px] ${
-                          emailError ? "border-red-500" : ""
-                        }`}
+                        className={`border w-full sm:w-[360px] rounded-[4px] h-[47px] px-2 placeholder:text-[14px] ${emailError ? "border-red-500" : ""
+                          }`}
                         type="email"
                         value={email}
                         onChange={(e) => {
                           setEmail(e.target.value);
-                          setEmailError(false); // Reset the error when the user types
+                          setEmailError(""); // Reset the error when the user types
                         }}
                         placeholder="Enter your email"
                       />
@@ -86,14 +105,13 @@ const ForgotPassword = () => {
                         </p>
                       )}
                     </div>
+                    <button
+                      type="submit"
+                      className={`mt-7 bg-blue-400 text-white font-[700] text-[16px] w-full rounded-[4px] h-[47px] hover:bg-white hover:text-blue-400 hover:border hover:border-blue-400 ${loading ? "pointer-events-none flex justify-center items-center" : ""}`}
+                    >
+                      {loading ? <LoadingFormII /> : "Send Reset Link"}
+                    </button>
                   </form>
-                  <button
-                    type="submit"
-                    onClick={handleSubmit}
-                    className="mt-7 bg-blue-400 text-white font-[700] text-[16px] w-full rounded-[4px] h-[47px] hover:bg-white hover:text-blue-400 hover:border hover:border-blue-400"
-                  >
-                    Send Reset Link
-                  </button>
                   <p className="mt-6 text-center font-[400] text-[14px]">
                     Don’t have an account?
                     <Link
@@ -125,19 +143,48 @@ const ForgotPassword = () => {
                     Reset Password
                   </h1>
                   <p className="mt-1 text-[16px] font-[400] text-center text-GrayHomz">
-                    We have sent a reset password to <br /> {email}
+                    We have sent a reset password link to <br /> {email}
                   </p>
-                  <Link
-                    href={"/"}
-                    className="mt-5 bg-blue-400 text-white font-[700] text-[16px] w-full rounded-[4px] h-[48px] text-center py-[10px] hover:bg-white hover:text-blue-400 hover:border hover:border-blue-400"
-                  >
-                    Continue
-                  </Link>
+                  <form className="mt-6" onSubmit={handleReset}>
+                    <div className="flex flex-col gap-2 items-start">
+                      <label className="text-center text-[14px] font-[500] text-BlackHomz">
+                        Code*
+                      </label>
+                      <input
+                        className="border w-full sm:w-[360px] rounded-[4px] h-[47px] px-2 placeholder:text-[14px]"
+                        type="text"
+                        value={code}
+                        onChange={(e) => setCode(e.target.value)}
+                        placeholder="Enter the code"
+                      />
+                      <label className="text-center text-[14px] font-[500] text-BlackHomz">
+                        New Password*
+                      </label>
+                      <input
+                        className="border w-full sm:w-[360px] rounded-[4px] h-[47px] px-2 placeholder:text-[14px]"
+                        type="password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        placeholder="Enter your new password"
+                      />
+                      {emailError && (
+                        <p className="mt-1 text-[14px] font-[400] text-red-500">
+                          {emailError}
+                        </p>
+                      )}
+                    </div>
+                    <button
+                      type="submit"
+                      className={`mt-7 bg-blue-400 text-white font-[700] text-[16px] w-full rounded-[4px] h-[47px] hover:bg-white hover:text-blue-400 hover:border hover:border-blue-400 ${loading ? "pointer-events-none flex justify-center items-center" : ""}`}
+                    >
+                      {loading ? <LoadingFormII /> : "Reset Password"}
+                    </button>
+                  </form>
                   <p className="mt-5 text-center font-[400] text-[14px]">
                     Didn't receive the email?
                     <button
                       className="text-center font-[700] text-[14px] text-blue-400  ml-1"
-                      onClick={handleSubmitT}
+                      onClick={handleSubmit}
                     >
                       Click to resend
                     </button>

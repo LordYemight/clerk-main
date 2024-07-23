@@ -5,7 +5,7 @@ import BashedEye from '@/components/icons/BashedEye';
 import Eye from '@/components/icons/Eye';
 import { useRouter } from 'next/navigation';
 import React, { useState } from 'react';
-import { useClerk, useSignIn, useUser } from "@clerk/nextjs";
+import { useSignIn } from "@clerk/nextjs";
 import LoadingFormII from "@/components/loader/loadingFormII";
 
 const Login = () => {
@@ -15,10 +15,7 @@ const Login = () => {
     const [loginError, setLoginError] = useState("");
     const [loading, setLoading] = useState(false);
     const router = useRouter();
-
-    const { signIn } = useSignIn();
-    const { redirectToSignIn, redirectToSignUp } = useClerk();
-    const { user, isSignedIn } = useUser();
+    const { signIn, setActive } = useSignIn();
 
     const handleGoogleSignIn = async () => {
         try {
@@ -27,26 +24,17 @@ const Login = () => {
                 strategy: 'oauth_google',
                 redirect_url: window.location.href
             });
-            console.log(response?.firstFactorVerification?.externalVerificationRedirectURL?.href);
             if (response?.firstFactorVerification?.externalVerificationRedirectURL) {
                 if (response?.firstFactorVerification?.strategy === 'oauth_google') {
-                    // Accessing redirect URL
                     const href = response?.firstFactorVerification?.externalVerificationRedirectURL?.href;
                     console.log('Redirect URL:', href);
-
-                    // Example: Check verification status
                     if (response?.firstFactorVerification?.status === 'unverified') {
-                        // Handle unverified status, maybe redirect to externalVerificationRedirectURL.href
-                        // Example: Redirect user to Google OAuth URL
                         window.location.href = href;
                     } else if (response?.firstFactorVerification?.status === 'verified') {
-                        // Handle verified status, proceed with your application logic
-                        // console.log('OAuth Google verification successful');
                     }
                 }
             }
         } catch (error) {
-            // console.error("Google sign-in error:", error);
             setLoginError("Failed to sign in with Google.");
         } finally {
             setLoading(false);
@@ -63,11 +51,11 @@ const Login = () => {
                 password,
             });
             if (result.status === "complete") {
+                await setActive({ session: result?.createdSessionId });
                 router.push("/");
             } else {
-                // Handle incomplete or other statuses
                 console.log("Login status:", result.status);
-                setLoginError("Failed to log in. Please check your credentials.");
+                setLoginError("Failed to log in. Check your credentials.");
             }
         } catch (error) {
             setLoginError("Failed to log in. Please check your credentials.");
@@ -75,8 +63,6 @@ const Login = () => {
             setLoading(false);
         }
     };
-
-
 
     const Visible = () => {
         setVisible(!visible);
