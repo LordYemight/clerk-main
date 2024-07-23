@@ -81,7 +81,7 @@ const ForgotPassword = () => {
                     Forgot Password?
                   </h1>
                   <p className="mt-1 text-[16px] text-start font-[400] text-GrayHomz">
-                    Enter your email and we’ll send you a reset link.
+                    Enter your email and we&apos;ll send you a reset link.
                   </p>
                   <form className="mt-6" onSubmit={handleSubmit}>
                     <div className="flex flex-col gap-2 items-start">
@@ -113,7 +113,7 @@ const ForgotPassword = () => {
                     </button>
                   </form>
                   <p className="mt-6 text-center font-[400] text-[14px]">
-                    Don’t have an account?
+                    Don&apos;t have an account?
                     <Link
                       className="text-center font-[700] text-[14px] text-blue-400  ml-1"
                       href={"/register"}
@@ -181,7 +181,7 @@ const ForgotPassword = () => {
                     </button>
                   </form>
                   <p className="mt-5 text-center font-[400] text-[14px]">
-                    Didn't receive the email?
+                    Didn&apos;t receive the email?
                     <button
                       className="text-center font-[700] text-[14px] text-blue-400  ml-1"
                       onClick={handleSubmit}
