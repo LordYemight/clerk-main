@@ -84,16 +84,12 @@ const Register = () => {
       setError('SignUp is not loaded yet.');
       return;
     }
-  
     try {
       const response = await signUp.create({
         strategy: 'oauth_google',
         redirect_url: window.location.href,
         flow: 'signUp',
       });
-  
-      console.log('Google Sign Up Response:', response);
-  
       const { verifications } = response;
       if (verifications && verifications.externalAccount && verifications.externalAccount.externalVerificationRedirectURL) {
         const href = verifications.externalAccount.externalVerificationRedirectURL.href;

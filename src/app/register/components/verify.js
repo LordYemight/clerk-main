@@ -19,7 +19,7 @@ const Verify = ({ email, isLoaded, signUp }) => {
       const newOTP = [...otp];
       newOTP[index] = value;
       setOTP(newOTP);
-      setError(false); 
+      setError(false);
       if (value && index < otp.length - 1) {
         inputRefs.current[index + 1].focus();
       }
@@ -73,6 +73,8 @@ const Verify = ({ email, isLoaded, signUp }) => {
     } catch (error) {
       setError2(error.errors[0]?.longMessage || "An error occurred. Please try again.");
       setLoading(false);
+    } finally {
+      router.push("/");
     }
   };
 
