@@ -1,4 +1,4 @@
-import mongoose, { Mongoose } from 'mongoose'
+import mongoose from 'mongoose';
 
 const Mongo = process.env.NEXT_PUBLIC_MONGODB_URL;
 
@@ -16,12 +16,11 @@ export const connect = async () => {
   if (cached.conn) return cached.conn;
 
   if (!cached.promise) {
-    const options = {
+    cached.promise = mongoose.connect(Mongo, {
+      dbName: "Clerk",
       bufferCommands: false,
-      connectTimeoutMS: 10000,
-    };
-
-    cached.promise = mongoose.connect(Mongo, options).then((mongoose) => mongoose);
+      connectTimeoutMS: 30000,
+    }).then((mongoose) => mongoose);
   }
 
   try {
